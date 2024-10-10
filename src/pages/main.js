@@ -4,7 +4,7 @@ import styled, { keyframes } from 'styled-components';
 import loginVideo from '../video/bgtest.mp4';
 import { QRCodeSVG } from 'qrcode.react';
 import * as OTPAuth from 'otpauth';
-  
+
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -62,7 +62,7 @@ const ContentContainer = styled.div`
   flex-direction: column;
   width: 450px;
   height: 700px;
-  padding: 40px; /* Ensure you have enough padding at the top */
+  padding: 40px; 
   background: rgba(255, 255, 255, 0.95);
   border-radius: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -73,16 +73,12 @@ const ContentContainer = styled.div`
   @media (max-width: 768px) {
     width: 90%;
     margin-right: 5%;
-    padding: 30px; /* Adjust for mobile as well */
+    padding: 30px; 
     height: 100%;
     border-radius: inherit;
     box-shadow: none;
   }
 `;
-
-
-
-
 
 const Logo = styled.h1`
   font-size: 48px;
@@ -172,7 +168,7 @@ const Button = styled.button`
 const LinkContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-top: 18em; /* Pushes the links to the bottom */
+  margin-top: 18em; 
 `;
 
 const Link = styled.a`
@@ -304,9 +300,6 @@ const CloseX = styled.span`
   transform: translate(-50%, -50%);
 `;
 
-
-
-
 const App = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [username, setUsername] = useState('');
@@ -345,10 +338,10 @@ const App = () => {
     const handleLogin = (e) => {
         e.preventDefault();
         if (username === 'admin' && password === 'admin') {
-            const secret = OTPAuth.Secret.fromBase32('JBSWY3DPEHPK3PXP'); // Use a predefined base32 secret
+            const secret = OTPAuth.Secret.fromBase32('JBSWY3DPEHPK3PXP'); 
             const totp = new OTPAuth.TOTP({
                 issuer: 'ASFALTIOS',
-                label: 'security ',
+                label: 'security',
                 algorithm: 'SHA1',
                 digits: 6,
                 period: 30,
@@ -380,7 +373,7 @@ const App = () => {
         <>
             <LoadingScreen isLoading={isLoading}>
                 <LoadingCircle />
-                <LoadingText>Velkommen til fremtiden...</LoadingText>
+                <LoadingText>ASTRA is loading...</LoadingText>
             </LoadingScreen>
             <PageContainer>
                 <VideoBackground ref={videoRef} loop muted playsInline preload="auto">
@@ -388,7 +381,7 @@ const App = () => {
                     Your browser does not support the video tag.
                 </VideoBackground>
                 <ContentContainer>
-                    <Logo>[bas]</Logo>
+                    <Logo>[Asfaltios]</Logo>
                     {!showAuthenticator ? (
                         <form onSubmit={handleLogin}>
                             <InputContainer>
@@ -398,7 +391,7 @@ const App = () => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                 />
-                                <InputLabel>Brukernavn</InputLabel>
+                                <InputLabel>Username</InputLabel>
                             </InputContainer>
                             <InputContainer>
                                 <Input
@@ -407,7 +400,7 @@ const App = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
-                                <InputLabel>Passord</InputLabel>
+                                <InputLabel>Password</InputLabel>
                             </InputContainer>
                             <RememberMeContainer>
                                 <Checkbox
@@ -416,12 +409,12 @@ const App = () => {
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
                                 />
-                                <Label htmlFor="rememberMe">Husk meg</Label>
+                                <Label htmlFor="rememberMe">Remember me</Label>
                             </RememberMeContainer>
-                            <Button type="submit">Logg inn</Button>
+                            <Button type="submit">Log in</Button>
                             <LinkContainer>
-                                <Link href="#">Glemt passord?</Link>
-                                <Link href="#">Ny bruker</Link>
+                                <Link href="#">Forgot password?</Link>
+                                <Link href="#">New user</Link>
                             </LinkContainer>
                         </form>
                     ) : (
@@ -443,7 +436,7 @@ const App = () => {
 
             {showError && (
                 <ErrorModal>
-                    <ErrorMessage>Feil brukernavn, passord eller kode</ErrorMessage>
+                    <ErrorMessage>Incorrect username, password, or code</ErrorMessage>
                     <CloseButton onClick={() => setShowError(false)}>
                         <CountdownCircle viewBox="0 0 32 32">
                             <CountdownCirclePath cx="16" cy="16" r="15" progress={100} />

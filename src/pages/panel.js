@@ -3,7 +3,7 @@ import axios from 'axios';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser, FiSearch } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser, FiSearch, FiHelpCircle, FiShield } from 'react-icons/fi';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -234,6 +234,15 @@ const ModalContent = styled(motion.div)`
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 `;
 
+const HelpContent = styled.div`
+  padding: 2rem;
+  line-height: 1.5;
+`;
+
+const HelpHeader = styled.h2`
+  margin-bottom: 1rem;
+`;
+
 const SettingsOption = styled.div`
   display: flex;
   justify-content: space-between;
@@ -249,6 +258,7 @@ const StaffPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [currentTheme, setCurrentTheme] = useState(lightTheme);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const chatWindowRef = useRef(null);
   const navigate = useNavigate();
@@ -323,7 +333,6 @@ const StaffPage = () => {
 
   const toggleNotifications = useCallback(() => {
     setNotificationsEnabled(prev => !prev);
-    // Here you would typically also update this setting on the server
   }, []);
 
   if (!isLoggedIn) {
@@ -336,6 +345,8 @@ const StaffPage = () => {
       <Layout>
         <Sidebar>
           <SidebarIcon className="active"><FiMessageSquare /></SidebarIcon>
+          <SidebarIcon onClick={() => setShowHelp(true)}><FiHelpCircle /></SidebarIcon>
+          <SidebarIcon onClick={() => alert('Security Features Coming Soon!')}><FiShield /></SidebarIcon>
           <SidebarIcon onClick={() => setShowSettings(true)}><FiSettings /></SidebarIcon>
           <SidebarIcon onClick={handleLogout}><FiLogOut /></SidebarIcon>
         </Sidebar>
@@ -406,6 +417,31 @@ const StaffPage = () => {
         </MainContent>
       </Layout>
       <AnimatePresence>
+        {showHelp && (
+          <Modal
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowHelp(false)}
+          >
+            <ModalContent
+              onClick={e => e.stopPropagation()}
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+            >
+              <HelpContent>
+                <HelpHeader>How to Use the Live Chat</HelpHeader>
+                <p>1. To start a chat, select a user from the list.</p>
+                <p>2. Type your message in the input box at the bottom and press the send button.</p>
+                <p>3. The chat history will appear in the main window, where you can see both user and staff messages.</p>
+                <p>4. If you need to clear the chat, use the trash icon in the header.</p>
+                <p>5. Respond to incoming messages promptly for better service!</p>
+              </HelpContent>
+              <button onClick={() => setShowHelp(false)}>Close</button>
+            </ModalContent>
+          </Modal>
+        )}
         {showSettings && (
           <Modal
             initial={{ opacity: 0 }}
