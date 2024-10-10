@@ -77,6 +77,7 @@ const ContentContainer = styled.div`
     height: 100%;
     border-radius: inherit;
     box-shadow: none;
+    background: white;
   }
 `;
 
