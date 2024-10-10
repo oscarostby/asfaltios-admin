@@ -381,7 +381,7 @@ const App = () => {
                     Your browser does not support the video tag.
                 </VideoBackground>
                 <ContentContainer>
-                    <Logo>[Asfaltios]</Logo>
+                    <Logo>Aspa</Logo>
                     {!showAuthenticator ? (
                         <form onSubmit={handleLogin}>
                             <InputContainer>
