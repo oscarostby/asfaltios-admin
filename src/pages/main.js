@@ -71,8 +71,7 @@ const ContentContainer = styled.div`
   animation: ${fadeIn} 2s ease-out 3s forwards, ${slideInFade} 2s ease-out 3s forwards;
 
   @media (max-width: 768px) {
-    width: 90%;
-    margin-right: 5%;
+    width: 100%;
     padding: 30px; 
     height: 100%;
     border-radius: inherit;
