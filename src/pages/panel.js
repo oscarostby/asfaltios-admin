@@ -213,43 +213,6 @@ const IconButton = styled.button`
   }
 `;
 
-const Modal = styled(motion.div)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled(motion.div)`
-  background-color: ${({ theme }) => theme.cardBg};
-  padding: 2rem;
-  border-radius: 0.5rem;
-  width: 300px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-`;
-
-const HelpContent = styled.div`
-  padding: 2rem;
-  line-height: 1.5;
-`;
-
-const HelpHeader = styled.h2`
-  margin-bottom: 1rem;
-`;
-
-const SettingsOption = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
 const StaffPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeChats, setActiveChats] = useState([]);
@@ -257,9 +220,6 @@ const StaffPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentTheme, setCurrentTheme] = useState(lightTheme);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const chatWindowRef = useRef(null);
   const navigate = useNavigate();
 
@@ -280,17 +240,17 @@ const StaffPage = () => {
 
   const fetchActiveChats = useCallback(async () => {
     try {
-      const response = await axios.get('https://api.asfaltios.com/api/chat/active');
+      const response = await axios.get('http://localhost:5000/api/chat/active');
       setActiveChats(response.data);
     } catch (error) {
       console.error('Error fetching active chats:', error);
     }
   }, []);
 
-  const selectChat = useCallback(async (userId) => {
-    setSelectedChat(userId);
+  const selectChat = useCallback(async (chatId) => {
+    setSelectedChat(chatId);
     try {
-      const response = await axios.get(`https://api.asfaltios.com/api/chat/messages/${userId}`);
+      const response = await axios.get(`http://localhost:5000/api/chat/messages/${chatId}`);
       setMessages(response.data);
       setNewMessage('');
     } catch (error) {
@@ -302,7 +262,7 @@ const StaffPage = () => {
     if (!newMessage.trim() || !selectedChat) return;
 
     try {
-      const response = await axios.post('https://api.asfaltios.com/api/chat/send', {
+      const response = await axios.post('http://localhost:5000/api/chat/send', {
         userId: selectedChat,
         text: newMessage,
         isStaff: true,
@@ -331,10 +291,6 @@ const StaffPage = () => {
     navigate('/');
   }, [navigate]);
 
-  const toggleNotifications = useCallback(() => {
-    setNotificationsEnabled(prev => !prev);
-  }, []);
-
   if (!isLoggedIn) {
     return null;
   }
@@ -345,9 +301,9 @@ const StaffPage = () => {
       <Layout>
         <Sidebar>
           <SidebarIcon className="active"><FiMessageSquare /></SidebarIcon>
-          <SidebarIcon onClick={() => setShowHelp(true)}><FiHelpCircle /></SidebarIcon>
+          <SidebarIcon onClick={() => alert('Help Coming Soon!')}><FiHelpCircle /></SidebarIcon>
           <SidebarIcon onClick={() => alert('Security Features Coming Soon!')}><FiShield /></SidebarIcon>
-          <SidebarIcon onClick={() => setShowSettings(true)}><FiSettings /></SidebarIcon>
+          <SidebarIcon onClick={toggleTheme}><FiSettings /></SidebarIcon>
           <SidebarIcon onClick={handleLogout}><FiLogOut /></SidebarIcon>
         </Sidebar>
         <ChatList>
@@ -357,16 +313,16 @@ const StaffPage = () => {
           <AnimatePresence>
             {activeChats.map((chat) => (
               <ChatItem
-                key={chat._id}
-                onClick={() => selectChat(chat._id)}
+                key={chat.chatId}
+                onClick={() => selectChat(chat.chatId)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <Avatar>{chat.username ? chat.username[0].toUpperCase() : <FiUser />}</Avatar>
+                <Avatar>{chat.chatId[0].toUpperCase()}</Avatar>
                 <ChatInfo>
-                  <ChatName>{chat.username || 'Anonymous User'}</ChatName>
+                  <ChatName>Chat with {chat.chatId}</ChatName>
                   <LastMessage>Last message preview...</LastMessage>
                 </ChatInfo>
               </ChatItem>
@@ -377,7 +333,7 @@ const StaffPage = () => {
           {selectedChat ? (
             <>
               <ChatHeader>
-                <h2>{activeChats.find(chat => chat._id === selectedChat)?.username || 'Anonymous User'}</h2>
+                <h2>{selectedChat}</h2>
                 <IconButton><FiTrash2 /></IconButton>
               </ChatHeader>
               <ChatWindow>
@@ -416,81 +372,6 @@ const StaffPage = () => {
           )}
         </MainContent>
       </Layout>
-      <AnimatePresence>
-        {showHelp && (
-          <Modal
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowHelp(false)}
-          >
-            <ModalContent
-              onClick={e => e.stopPropagation()}
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-            >
-              <HelpContent>
-                <HelpHeader>How to Use the Live Chat</HelpHeader>
-                <p>1. To start a chat, select a user from the list.</p>
-                <p>2. Type your message in the input box at the bottom and press the send button.</p>
-                <p>3. The chat history will appear in the main window, where you can see both user and staff messages.</p>
-                <p>4. If you need to clear the chat, use the trash icon in the header.</p>
-                <p>5. Respond to incoming messages promptly for better service!</p>
-              </HelpContent>
-              <button onClick={() => setShowHelp(false)}>Close</button>
-            </ModalContent>
-          </Modal>
-        )}
-        {showSettings && (
-          <Modal
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowSettings(false)}
-          >
-            <ModalContent
-              onClick={e => e.stopPropagation()}
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-            >
-              <h2>Settings</h2>
-              <SettingsOption>
-                <span>Dark Mode</span>
-                <IconButton onClick={toggleTheme}>
-                  {currentTheme === lightTheme ? <FiMoon /> : <FiSun />}
-                </IconButton>
-              </SettingsOption>
-              <SettingsOption>
-                <span>Notifications</span>
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={toggleNotifications}
-                />
-              </SettingsOption>
-              <SettingsOption>
-                <span>Language</span>
-                <select defaultValue="en">
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                </select>
-              </SettingsOption>
-              <SettingsOption>
-                <span>Font Size</span>
-                <select defaultValue="medium">
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </select>
-              </SettingsOption>
-              <button onClick={() => setShowSettings(false)}>Close</button>
-            </ModalContent>
-          </Modal>
-        )}
-      </AnimatePresence>
     </ThemeProvider>
   );
 };
