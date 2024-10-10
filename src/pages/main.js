@@ -373,7 +373,7 @@ const App = () => {
         <>
             <LoadingScreen isLoading={isLoading}>
                 <LoadingCircle />
-                <LoadingText>ASTRA is loading...</LoadingText>
+                <LoadingText>Asfaltios security panel is loading...</LoadingText>
             </LoadingScreen>
             <PageContainer>
                 <VideoBackground ref={videoRef} loop muted playsInline preload="auto">
