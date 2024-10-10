@@ -3,7 +3,7 @@ import axios from 'axios';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser, FiSearch, FiHelpCircle, FiShield } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser, FiSearch } from 'react-icons/fi';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -213,6 +213,34 @@ const IconButton = styled.button`
   }
 `;
 
+const Modal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled(motion.div)`
+  background-color: ${({ theme }) => theme.cardBg};
+  padding: 2rem;
+  border-radius: 0.5rem;
+  width: 300px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+`;
+
+const SettingsOption = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
 const StaffPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeChats, setActiveChats] = useState([]);
@@ -220,6 +248,8 @@ const StaffPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentTheme, setCurrentTheme] = useState(lightTheme);
+  const [showSettings, setShowSettings] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const chatWindowRef = useRef(null);
   const navigate = useNavigate();
 
@@ -240,17 +270,17 @@ const StaffPage = () => {
 
   const fetchActiveChats = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/chat/active');
+      const response = await axios.get('https://api.asfaltios.com/api/chat/active');
       setActiveChats(response.data);
     } catch (error) {
       console.error('Error fetching active chats:', error);
     }
   }, []);
 
-  const selectChat = useCallback(async (chatId) => {
-    setSelectedChat(chatId);
+  const selectChat = useCallback(async (userId) => {
+    setSelectedChat(userId);
     try {
-      const response = await axios.get(`http://localhost:5000/api/chat/messages/${chatId}`);
+      const response = await axios.get(`https://api.asfaltios.com/api/chat/messages/${userId}`);
       setMessages(response.data);
       setNewMessage('');
     } catch (error) {
@@ -262,7 +292,7 @@ const StaffPage = () => {
     if (!newMessage.trim() || !selectedChat) return;
 
     try {
-      const response = await axios.post('http://localhost:5000/api/chat/send', {
+      const response = await axios.post('https://api.asfaltios.com/api/chat/send', {
         userId: selectedChat,
         text: newMessage,
         isStaff: true,
@@ -291,6 +321,11 @@ const StaffPage = () => {
     navigate('/');
   }, [navigate]);
 
+  const toggleNotifications = useCallback(() => {
+    setNotificationsEnabled(prev => !prev);
+    // Here you would typically also update this setting on the server
+  }, []);
+
   if (!isLoggedIn) {
     return null;
   }
@@ -301,9 +336,7 @@ const StaffPage = () => {
       <Layout>
         <Sidebar>
           <SidebarIcon className="active"><FiMessageSquare /></SidebarIcon>
-          <SidebarIcon onClick={() => alert('Help Coming Soon!')}><FiHelpCircle /></SidebarIcon>
-          <SidebarIcon onClick={() => alert('Security Features Coming Soon!')}><FiShield /></SidebarIcon>
-          <SidebarIcon onClick={toggleTheme}><FiSettings /></SidebarIcon>
+          <SidebarIcon onClick={() => setShowSettings(true)}><FiSettings /></SidebarIcon>
           <SidebarIcon onClick={handleLogout}><FiLogOut /></SidebarIcon>
         </Sidebar>
         <ChatList>
@@ -313,16 +346,16 @@ const StaffPage = () => {
           <AnimatePresence>
             {activeChats.map((chat) => (
               <ChatItem
-                key={chat.chatId}
-                onClick={() => selectChat(chat.chatId)}
+                key={chat._id}
+                onClick={() => selectChat(chat._id)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <Avatar>{chat.chatId[0].toUpperCase()}</Avatar>
+                <Avatar>{chat.username ? chat.username[0].toUpperCase() : <FiUser />}</Avatar>
                 <ChatInfo>
-                  <ChatName>Chat with {chat.chatId}</ChatName>
+                  <ChatName>{chat.username || 'Anonymous User'}</ChatName>
                   <LastMessage>Last message preview...</LastMessage>
                 </ChatInfo>
               </ChatItem>
@@ -333,7 +366,7 @@ const StaffPage = () => {
           {selectedChat ? (
             <>
               <ChatHeader>
-                <h2>{selectedChat}</h2>
+                <h2>{activeChats.find(chat => chat._id === selectedChat)?.username || 'Anonymous User'}</h2>
                 <IconButton><FiTrash2 /></IconButton>
               </ChatHeader>
               <ChatWindow>
@@ -372,6 +405,56 @@ const StaffPage = () => {
           )}
         </MainContent>
       </Layout>
+      <AnimatePresence>
+        {showSettings && (
+          <Modal
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSettings(false)}
+          >
+            <ModalContent
+              onClick={e => e.stopPropagation()}
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+            >
+              <h2>Settings</h2>
+              <SettingsOption>
+                <span>Dark Mode</span>
+                <IconButton onClick={toggleTheme}>
+                  {currentTheme === lightTheme ? <FiMoon /> : <FiSun />}
+                </IconButton>
+              </SettingsOption>
+              <SettingsOption>
+                <span>Notifications</span>
+                <input
+                  type="checkbox"
+                  checked={notificationsEnabled}
+                  onChange={toggleNotifications}
+                />
+              </SettingsOption>
+              <SettingsOption>
+                <span>Language</span>
+                <select defaultValue="en">
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                </select>
+              </SettingsOption>
+              <SettingsOption>
+                <span>Font Size</span>
+                <select defaultValue="medium">
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </select>
+              </SettingsOption>
+              <button onClick={() => setShowSettings(false)}>Close</button>
+            </ModalContent>
+          </Modal>
+        )}
+      </AnimatePresence>
     </ThemeProvider>
   );
 };
