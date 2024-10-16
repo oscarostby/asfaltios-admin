@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser, FiSearch } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiMoon, FiSun, FiSettings, FiMessageSquare, FiLogOut, FiUser } from 'react-icons/fi';
+
+const API_URL = 'https://api2.asfaltios.com';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -74,28 +74,6 @@ const ChatList = styled.div`
   background-color: ${({ theme }) => theme.cardBg};
   border-right: 1px solid ${({ theme }) => theme.border};
   overflow-y: auto;
-`;
-
-const SearchBar = styled.div`
-  padding: 1rem;
-  position: sticky;
-  top: 0;
-  background-color: ${({ theme }) => theme.cardBg};
-  z-index: 1;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  background-color: ${({ theme }) => theme.inputBg};
-  color: ${({ theme }) => theme.textColor};
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary};
-  }
 `;
 
 const ChatItem = styled(motion.div)`
@@ -213,122 +191,88 @@ const IconButton = styled.button`
   }
 `;
 
-const Modal = styled(motion.div)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled(motion.div)`
-  background-color: ${({ theme }) => theme.cardBg};
-  padding: 2rem;
-  border-radius: 0.5rem;
-  width: 300px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-`;
-
-const SettingsOption = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const StaffPage = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeChats, setActiveChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
+function Staff() {
+  const [chats, setChats] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState('');
   const [currentTheme, setCurrentTheme] = useState(lightTheme);
-  const [showSettings, setShowSettings] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const chatWindowRef = useRef(null);
-  const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const checkLoginStatus = () => {
-      const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
-      setIsLoggedIn(loggedInStatus);
-
-      if (!loggedInStatus) {
-        navigate('/404');
-      } else {
-        fetchActiveChats();
-      }
-    };
-
-    checkLoginStatus();
-  }, [navigate]);
-
-  const fetchActiveChats = useCallback(async () => {
-    try {
-      const response = await axios.get('https://api.asfaltios.com/api/chat/active');
-      setActiveChats(response.data);
-    } catch (error) {
-      console.error('Error fetching active chats:', error);
-    }
+    loadChatList();
+    const chatListInterval = setInterval(loadChatList, 5000);
+    return () => clearInterval(chatListInterval);
   }, []);
 
-  const selectChat = useCallback(async (userId) => {
-    setSelectedChat(userId);
-    try {
-      const response = await axios.get(`https://api.asfaltios.com/api/chat/messages/${userId}`);
-      setMessages(response.data);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+  useEffect(() => {
+    if (currentChatId) {
+      loadMessages();
+      const messagesInterval = setInterval(loadMessages, 3000);
+      return () => clearInterval(messagesInterval);
     }
-  }, []);
+  }, [currentChatId]);
 
-  const sendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !selectedChat) return;
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
+  const loadChatList = async () => {
     try {
-      const response = await axios.post('https://api.asfaltios.com/api/chat/send', {
-        userId: selectedChat,
-        text: newMessage,
-        isStaff: true,
+      const response = await fetch(`${API_URL}/api2/chats`);
+      const data = await response.json();
+      setChats(prevChats => {
+        const newChats = data.filter(chatId => !prevChats.includes(chatId));
+        if (newChats.length > 0) {
+          console.log('New chats detected:', newChats);
+        }
+        return data;
       });
-      if (response.status === 200) {
-        setMessages(prevMessages => [...prevMessages, { text: newMessage, isStaff: true }]);
-        setNewMessage('');
-        scrollToBottom();
-      }
+    } catch (error) {
+      console.error('Error loading chat list:', error);
+    }
+  };
+
+  const loadMessages = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api2/messages/${currentChatId}`);
+      const data = await response.json();
+      setMessages(prevMessages => {
+        if (data.length !== prevMessages.length) {
+          console.log('New messages detected');
+          return data;
+        }
+        return prevMessages;
+      });
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!currentChatId || !inputMessage.trim()) return;
+
+    try {
+      await fetch(`${API_URL}/api2/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: currentChatId, sender: 'Staff', content: inputMessage }),
+      });
+
+      setInputMessage('');
+      loadMessages(); // Immediately load messages after sending
     } catch (error) {
       console.error('Error sending message:', error);
     }
-  }, [newMessage, selectedChat]);
+  };
 
   const scrollToBottom = useCallback(() => {
-    chatWindowRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const toggleTheme = useCallback(() => {
     setCurrentTheme(prevTheme => prevTheme === lightTheme ? darkTheme : lightTheme);
   }, []);
-
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('isLoggedIn');
-    navigate('/');
-  }, [navigate]);
-
-  const toggleNotifications = useCallback(() => {
-    setNotificationsEnabled(prev => !prev);
-    // Here you would typically also update this setting on the server
-  }, []);
-
-  if (!isLoggedIn) {
-    return null;
-  }
 
   return (
     <ThemeProvider theme={currentTheme}>
@@ -336,63 +280,63 @@ const StaffPage = () => {
       <Layout>
         <Sidebar>
           <SidebarIcon className="active"><FiMessageSquare /></SidebarIcon>
-          <SidebarIcon onClick={() => setShowSettings(true)}><FiSettings /></SidebarIcon>
-          <SidebarIcon onClick={handleLogout}><FiLogOut /></SidebarIcon>
+          <SidebarIcon onClick={toggleTheme}>
+            {currentTheme === lightTheme ? <FiMoon /> : <FiSun />}
+          </SidebarIcon>
+          <SidebarIcon><FiSettings /></SidebarIcon>
+          <SidebarIcon><FiLogOut /></SidebarIcon>
         </Sidebar>
         <ChatList>
-          <SearchBar>
-            <SearchInput placeholder="Search chats..." />
-          </SearchBar>
           <AnimatePresence>
-            {activeChats.map((chat) => (
+            {chats.map((chatId) => (
               <ChatItem
-                key={chat._id}
-                onClick={() => selectChat(chat._id)}
+                key={chatId}
+                onClick={() => setCurrentChatId(chatId)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <Avatar>{chat.username ? chat.username[0].toUpperCase() : <FiUser />}</Avatar>
+                <Avatar><FiUser /></Avatar>
                 <ChatInfo>
-                  <ChatName>{chat.username || 'Anonymous User'}</ChatName>
-                  <LastMessage>Last message preview...</LastMessage>
+                  <ChatName>Chat {chatId.substr(-4)}</ChatName>
+                  <LastMessage>Click to view messages</LastMessage>
                 </ChatInfo>
               </ChatItem>
             ))}
           </AnimatePresence>
         </ChatList>
         <MainContent>
-          {selectedChat ? (
+          {currentChatId ? (
             <>
               <ChatHeader>
-                <h2>{activeChats.find(chat => chat._id === selectedChat)?.username || 'Anonymous User'}</h2>
+                <h2>Chat {currentChatId.substr(-4)}</h2>
                 <IconButton><FiTrash2 /></IconButton>
               </ChatHeader>
               <ChatWindow>
                 <MessageList>
                   <AnimatePresence>
-                    {messages.map((message, index) => (
+                    {messages.map((msg, index) => (
                       <Message
                         key={index}
-                        isStaff={message.isStaff}
+                        isStaff={msg.sender === 'Staff'}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3 }}
                       >
-                        {message.text}
+                        <strong>{msg.sender}:</strong> {msg.content}
                       </Message>
                     ))}
                   </AnimatePresence>
-                  <div ref={chatWindowRef} />
+                  <div ref={messagesEndRef} />
                 </MessageList>
               </ChatWindow>
               <InputArea>
                 <Input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   placeholder="Type your message..."
                 />
                 <IconButton onClick={sendMessage}><FiSend /></IconButton>
@@ -405,58 +349,8 @@ const StaffPage = () => {
           )}
         </MainContent>
       </Layout>
-      <AnimatePresence>
-        {showSettings && (
-          <Modal
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowSettings(false)}
-          >
-            <ModalContent
-              onClick={e => e.stopPropagation()}
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-            >
-              <h2>Settings</h2>
-              <SettingsOption>
-                <span>Dark Mode</span>
-                <IconButton onClick={toggleTheme}>
-                  {currentTheme === lightTheme ? <FiMoon /> : <FiSun />}
-                </IconButton>
-              </SettingsOption>
-              <SettingsOption>
-                <span>Notifications</span>
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={toggleNotifications}
-                />
-              </SettingsOption>
-              <SettingsOption>
-                <span>Language</span>
-                <select defaultValue="en">
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                </select>
-              </SettingsOption>
-              <SettingsOption>
-                <span>Font Size</span>
-                <select defaultValue="medium">
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </select>
-              </SettingsOption>
-              <button onClick={() => setShowSettings(false)}>Close</button>
-            </ModalContent>
-          </Modal>
-        )}
-      </AnimatePresence>
     </ThemeProvider>
   );
-};
+}
 
-export default StaffPage;
+export default Staff;

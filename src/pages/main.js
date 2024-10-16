@@ -72,11 +72,12 @@ const ContentContainer = styled.div`
 
   @media (max-width: 768px) {
     width: 90%;
-    margin-right: 5%;
+    margin-right: 0px;
     padding: 30px; /* Adjust for mobile as well */
     height: 100%;
     border-radius: inherit;
     box-shadow: none;
+    background: white;
   }
 `;
 
