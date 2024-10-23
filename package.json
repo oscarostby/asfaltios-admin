@@ -19,6 +19,7 @@
     "customize-cra": "^1.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "firebase": "^11.0.1",
     "framer-motion": "^11.3.30",
     "gsap": "^3.12.5",
     "gsap-trial": "^3.12.5",
