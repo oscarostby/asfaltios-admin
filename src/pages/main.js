@@ -202,24 +202,6 @@ const App = () => {
     };
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const userStatus = await checkUserStatus(result.user.uid);
-
-      if (userStatus.isApproved) {
-        localStorage.setItem('isLoggedIn', 'true');
-        navigate('/panel');
-      } else {
-        setError(
-          'Your account has not been approved yet. Please contact the administrator.'
-        );
-      }
-    } catch (error) {
-      setError('Google login failed. Please try again.');
-    }
-  };
-
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     try {
@@ -346,10 +328,6 @@ const App = () => {
               </Button>
             </Form>
           )}
-          <Button onClick={handleGoogleLogin}>
-            <FaGoogle />
-            {isLoginMode ? 'Login with Google' : 'Sign Up with Google'}
-          </Button>
           {error && <ErrorModal>{error}</ErrorModal>}
         </ContentContainer>
       </PageContainer>

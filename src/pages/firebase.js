@@ -5,7 +5,6 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword, // Import this function
-  GoogleAuthProvider,
   signOut,
 } from 'firebase/auth';
 import {
@@ -29,7 +28,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
 
 // Function to check if user is approved and admin
@@ -76,7 +74,6 @@ const registerWithEmailAndPassword = async (email, password, username) => {
 
 export {
   auth,
-  provider,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
